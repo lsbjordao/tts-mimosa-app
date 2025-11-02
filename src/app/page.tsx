@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { JSX } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { Search, Settings, Quote } from "lucide-react";
+import { Search, Settings, Quote, Github } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -129,6 +129,15 @@ export default function Home() {
             title="How to cite"
           >
             <Quote className="w-5 h-5 text-muted-foreground hover:text-primary transition" />
+          </a>
+          <a
+            href="https://github.com/lsbjordao/TTS-Mimosa"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center"
+            title="GitHub Repository"
+          >
+            <Github className="w-5 h-5 text-muted-foreground hover:text-primary transition" />
           </a>
           <Search className="w-5 h-5 text-muted-foreground" />
           <Input
