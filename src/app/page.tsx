@@ -115,7 +115,7 @@ export default function Home() {
       {/* 🔍 Cabeçalho */}
       <header className="border-b border-border bg-card p-3 flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          <div className="flex flex-col text-left leading-tight font-small mr-2">
+          <div className="flex flex-col text-left leading-tight font-medium mr-2" style={{ fontSize: "8px" }}>
             <span>Type</span>
             <span>Taxon</span>
             <span>Script</span>
