@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata = {
   title: "TTS-Mimosa",
   icons: {
-    icon: "/favicon.ico", // ou /favicon.ico, conforme o arquivo que você tiver
+    icon: "/TTS-Mimosa-App/favicon.ico", // ou /favicon.ico, conforme o arquivo que você tiver
   }
 };
 
