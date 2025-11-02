@@ -148,7 +148,7 @@ export default function Home() {
           <Search className="w-5 h-5 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Buscar em todo o JSON..."
+            placeholder="Search within the entire JSON..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-1"
