@@ -114,11 +114,11 @@ export default function Home() {
       {/* 🔍 Cabeçalho */}
       <header className="border-b border-border bg-card p-3 flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          <Image
-            src="/TTS-Mimosa-App/tts.png"
-            alt="TypeTaxonScript Logo"
-            className="h-7 w-auto"
-          />
+          <div className="flex flex-col text-left leading-tight font-medium mr-2">
+            <span>Type</span>
+            <span>Taxon</span>
+            <span>Script</span>
+          </div>
           <Search className="w-5 h-5 text-muted-foreground" />
           <Input
             type="text"
@@ -266,7 +266,7 @@ export default function Home() {
             </Card>
           ) : (
             <>
-              <p className="text-muted-foreground text-center">Select a taxon on left.</p>
+              <p className="text-muted-foreground text-center">Select a taxon on left</p>
 
               {/* Logo centralizada com transparência */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -279,7 +279,6 @@ export default function Home() {
             </>
           )}
         </main>
-
 
         {/* Painel direito */}
         <ScrollArea className="border-l border-border p-3 h-full overflow-auto dark-scrollbar">
