@@ -117,10 +117,10 @@ export default function Home() {
         <div className="flex items-center gap-2">
           <b
             onClick={() => window.location.reload()}
-            className="cursor-pointer transition-transform hover:scale-105"
+            className="cursor-pointer transition duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
             title="Clique para recarregar o TTS-Mimosa"
           >
-            TTS-Mimosa
+            Reload app
           </b>
 
           {/* Ícone de citação com link */}
