@@ -115,7 +115,7 @@ export default function Home() {
       {/* 🔍 Cabeçalho */}
       <header className="border-b border-border bg-card p-3 flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          TypeTaxonScript
+          TTS-Mimosa
           {/* Ícone de citação com link */}
           <a
             href="https://doi.org/10.1093/biomethods/bpae017"
