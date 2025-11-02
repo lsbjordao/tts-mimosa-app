@@ -54,7 +54,11 @@ function searchInJSON(
         results.push({ path: [...path, key].join("."), value: "(key match)" });
       }
 
-      if (options.searchValues && typeof value === "string" && value.toLowerCase().includes(term.toLowerCase())) {
+      if (
+        options.searchValues &&
+        typeof value === "string" &&
+        value.toLowerCase().includes(term.toLowerCase())
+      ) {
         results.push({ path: [...path, key].join("."), value });
       }
 
@@ -85,10 +89,26 @@ export default function Home() {
     searchValues: true,
   });
 
+  const [allImages, setAllImages] = useState<
+    { path: string; url: string; legend?: string; specificEpithet?: string }[]
+  >([]);
+
+  // ---------- Carrega dados ----------
   useEffect(() => {
     fetch("/TTS-Mimosa-App/data/MimosaDB.json")
       .then((res) => res.json())
-      .then((data) => setPlants(data));
+      .then((data) => {
+        setPlants(data);
+
+        // Extrai todas as imagens globais
+        const all = data.flatMap((plant: any) =>
+          extractImagesWithPaths(plant).map((img) => ({
+            ...img,
+            specificEpithet: plant.specificEpithet,
+          }))
+        );
+        setAllImages(all);
+      });
   }, []);
 
   // ---------- Atualiza busca ----------
@@ -108,7 +128,7 @@ export default function Home() {
     setSearchResults(results.slice(0, maxResults));
   }, [searchTerm, plants, maxResults, searchOptions]);
 
-  const images = selected ? extractImagesWithPaths(selected) : [];
+  const images = selected ? extractImagesWithPaths(selected) : allImages;
 
   return (
     <div className="w-full h-screen bg-background text-foreground flex flex-col">
@@ -123,7 +143,6 @@ export default function Home() {
             TTS-Mimosa
           </b>
 
-          {/* Ícone de citação com link */}
           <a
             href="https://doi.org/10.1093/biomethods/bpae017"
             target="_blank"
@@ -142,7 +161,6 @@ export default function Home() {
           >
             <Github className="w-5 h-5 text-muted-foreground hover:text-primary transition" />
           </a>
-          {/* Ícone de citação dos docs */}
           <a
             href="https://lsbjordao.github.io/TTS-Mimosa/"
             target="_blank"
@@ -152,6 +170,7 @@ export default function Home() {
           >
             <BookOpenText className="w-5 h-5 text-muted-foreground hover:text-primary transition" />
           </a>
+
           <Search className="w-5 h-5 text-muted-foreground" />
           <Input
             type="text"
@@ -161,12 +180,11 @@ export default function Home() {
             className="flex-1"
           />
 
-          {/* ⚙️ Configurações */}
           <Popover>
             <PopoverTrigger asChild>
               <button
                 className="p-2 rounded-md hover:bg-muted transition"
-                title="Configurações de busca"
+                title="Search settings"
               >
                 <Settings className="w-5 h-5 text-muted-foreground" />
               </button>
@@ -175,9 +193,10 @@ export default function Home() {
               <div className="flex flex-col gap-3">
                 <h4 className="font-medium text-sm mb-1">Search config.</h4>
 
-                {/* Limite de resultados */}
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs text-muted-foreground">Result limit:</label>
+                  <label className="text-xs text-muted-foreground">
+                    Result limit:
+                  </label>
                   <select
                     aria-label="Limite de resultados"
                     value={maxResults}
@@ -193,9 +212,10 @@ export default function Home() {
                   </select>
                 </div>
 
-                {/* Onde buscar */}
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs text-muted-foreground">Search in:</label>
+                  <label className="text-xs text-muted-foreground">
+                    Search in:
+                  </label>
                   <div className="flex flex-col gap-1 text-sm">
                     <label className="flex items-center gap-2">
                       <input
@@ -247,8 +267,12 @@ export default function Home() {
                 className="w-full text-left px-2 py-1 hover:bg-muted border-b border-border last:border-none flex justify-between items-center"
               >
                 <div>
-                  <p className="text-sm font-mono break-words text-primary">{r.path}</p>
-                  <p className="text-xs text-muted-foreground truncate">{r.value}</p>
+                  <p className="text-sm font-mono break-words text-primary">
+                    {r.path}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {r.value}
+                  </p>
                 </div>
                 <span className="text-xs font-semibold text-right text-foreground ml-2">
                   {"Mimosa " + r.specificEpithet}
@@ -271,8 +295,11 @@ export default function Home() {
               {plants.map((p, i) => (
                 <button
                   key={i}
-                  className={`w-full text-left px-2 py-1 rounded hover:bg-muted ${selected?.specificEpithet === p.specificEpithet ? "bg-muted" : ""
-                    }`}
+                  className={`w-full text-left px-2 py-1 rounded hover:bg-muted ${
+                    selected?.specificEpithet === p.specificEpithet
+                      ? "bg-muted"
+                      : ""
+                  }`}
                   onClick={() => setSelected(p)}
                 >
                   <i>Mimosa {p.specificEpithet || "sp."}</i>
@@ -299,9 +326,9 @@ export default function Home() {
             </Card>
           ) : (
             <>
-              <p className="text-muted-foreground text-center">Select a taxon on left</p>
-
-              {/* Logo centralizada com transparência */}
+              <p className="text-muted-foreground text-center">
+                Select a taxon on left
+              </p>
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <Image
                   src="/TTS-Mimosa-App/tts.png"
@@ -323,7 +350,9 @@ export default function Home() {
               {images.length > 0 ? (
                 images.map((img, idx) => (
                   <div key={idx} className="space-y-1">
-                    <p className="text-sm text-muted-foreground break-words font-mono">{img.path}</p>
+                    <p className="text-sm text-muted-foreground break-words font-mono">
+                      {img.path}
+                    </p>
                     <div
                       className="bg-muted rounded overflow-hidden cursor-pointer flex justify-center"
                       onClick={() => setModalIndex(idx)}
@@ -337,7 +366,14 @@ export default function Home() {
                       />
                     </div>
                     {img.legend && (
-                      <p className="text-xs text-muted-foreground italic text-center">{img.legend}</p>
+                      <p className="text-xs text-muted-foreground italic text-center">
+                        {img.legend}
+                      </p>
+                    )}
+                    {!selected && img.specificEpithet && (
+                      <p className="text-xs text-primary text-center">
+                        <i>Mimosa {img.specificEpithet}</i>
+                      </p>
                     )}
                   </div>
                 ))
@@ -355,14 +391,12 @@ export default function Home() {
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           onClick={() => setModalIndex(null)}
         >
-          {/* Fundo desfocado */}
           <div className="absolute inset-0 bg-black/30 backdrop-blur-md" />
 
           <div
             className="relative w-full max-w-screen-lg flex flex-col items-center"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Botão de fechar */}
             <button
               onClick={() => setModalIndex(null)}
               className="absolute top-2 right-2 text-white bg-gray-800/70 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-700 transition"
@@ -370,10 +404,11 @@ export default function Home() {
               ✕
             </button>
 
-            {/* Setas */}
             <button
               onClick={() =>
-                setModalIndex((prev) => (prev! - 1 + images.length) % images.length)
+                setModalIndex(
+                  (prev) => (prev! - 1 + images.length) % images.length
+                )
               }
               className="absolute left-2 top-1/2 -translate-y-1/2 text-white bg-gray-800/70 rounded-full w-10 h-10 flex items-center justify-center hover:bg-gray-700 transition"
             >
@@ -388,7 +423,6 @@ export default function Home() {
               ▶
             </button>
 
-            {/* Imagem */}
             <Image
               src={images[modalIndex].url}
               alt={images[modalIndex].legend || "Imagem expandida"}
@@ -398,9 +432,15 @@ export default function Home() {
               className="rounded"
             />
 
-            {/* Legenda */}
             {images[modalIndex].legend && (
-              <p className="text-gray-300 text-sm text-center mt-2">{images[modalIndex].legend}</p>
+              <p className="text-gray-300 text-sm text-center mt-2">
+                {images[modalIndex].legend}
+              </p>
+            )}
+            {!selected && images[modalIndex].specificEpithet && (
+              <p className="text-gray-300 text-sm text-center mt-1 italic">
+                Mimosa {images[modalIndex].specificEpithet}
+              </p>
             )}
           </div>
         </div>
