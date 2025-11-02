@@ -117,8 +117,7 @@ export default function Home() {
           <Image
             src="/TTS-Mimosa-App/tts.png"
             alt="TypeTaxonScript Logo"
-            width={50}
-            height={20}
+            className="h-5 w-auto"
           />
           <Search className="w-5 h-5 text-muted-foreground" />
           <Input
