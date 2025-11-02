@@ -350,6 +350,11 @@ export default function Home() {
               {images.length > 0 ? (
                 images.map((img: any, idx: any) => (
                   <div key={idx} className="space-y-1">
+                    {!selected && img.specificEpithet && (
+                      <p className="text-xs text-primary text-center">
+                        <i>Mimosa {img.specificEpithet}</i>
+                      </p>
+                    )}
                     <p className="text-sm text-muted-foreground break-words font-mono">
                       {img.path}
                     </p>
@@ -368,11 +373,6 @@ export default function Home() {
                     {img.legend && (
                       <p className="text-xs text-muted-foreground italic text-center">
                         {img.legend}
-                      </p>
-                    )}
-                    {!selected && img.specificEpithet && (
-                      <p className="text-xs text-primary text-center">
-                        <i>Mimosa {img.specificEpithet}</i>
                       </p>
                     )}
                   </div>
