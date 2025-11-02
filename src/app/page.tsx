@@ -115,7 +115,14 @@ export default function Home() {
       {/* 🔍 Cabeçalho */}
       <header className="border-b border-border bg-card p-3 flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          <b>TTS-Mimosa</b>
+          <b
+            onClick={() => window.location.reload()}
+            className="cursor-pointer hover:underline hover:animate-pulse transition"
+            title="Reload app"
+          >
+            TTS-Mimosa
+          </b>
+
           {/* Ícone de citação com link */}
           <a
             href="https://doi.org/10.1093/biomethods/bpae017"
