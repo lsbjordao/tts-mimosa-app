@@ -114,6 +114,12 @@ export default function Home() {
       {/* 🔍 Cabeçalho */}
       <header className="border-b border-border bg-card p-3 flex flex-col gap-2">
         <div className="flex items-center gap-2">
+          <Image
+            src="/TTS-Mimosa-App/tts.png"
+            alt="TypeTaxonScript Logo"
+            width={50}
+            height={20}
+          />
           <Search className="w-5 h-5 text-muted-foreground" />
           <Input
             type="text"
@@ -233,9 +239,8 @@ export default function Home() {
               {plants.map((p, i) => (
                 <button
                   key={i}
-                  className={`w-full text-left px-2 py-1 rounded hover:bg-muted ${
-                    selected?.specificEpithet === p.specificEpithet ? "bg-muted" : ""
-                  }`}
+                  className={`w-full text-left px-2 py-1 rounded hover:bg-muted ${selected?.specificEpithet === p.specificEpithet ? "bg-muted" : ""
+                    }`}
                   onClick={() => setSelected(p)}
                 >
                   <i>Mimosa {p.specificEpithet || "sp."}</i>
