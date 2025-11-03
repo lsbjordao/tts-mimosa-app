@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import type { JSX } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -9,15 +9,23 @@ import { Search, Settings, Quote, Github, BookOpenText, FileText } from "lucide-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 
-const JSONGrid = dynamic(() => import("@redheadphone/react-json-grid"), { ssr: false });
+const JSONGrid = dynamic(() => import("@redheadphone/react-json-grid"), {
+  ssr: false,
+});
 
 // ---------- Função auxiliar: extrai imagens ----------
-function extractImagesWithPaths(obj: any, path: string[] = []): { path: string; url: string; legend?: string }[] {
+function extractImagesWithPaths(obj: any, path: string[] = []) {
   let results: { path: string; url: string; legend?: string }[] = [];
   if (Array.isArray(obj)) {
-    obj.forEach((item, i) => results.push(...extractImagesWithPaths(item, [...path, `[${i}]`])));
+    obj.forEach((item, i) =>
+      results.push(...extractImagesWithPaths(item, [...path, `[${i}]`]))
+    );
   } else if (typeof obj === "object" && obj !== null) {
     let url, legend;
     for (const [key, value] of Object.entries(obj)) {
@@ -28,6 +36,18 @@ function extractImagesWithPaths(obj: any, path: string[] = []): { path: string; 
     if (url) results.push({ path: path.join(".") || "root", url, legend });
   }
   return results;
+}
+
+// ---------- Função auxiliar: insere <wbr/> a cada 3 pontos ----------
+function renderPathGrouped(path: string, groupSize = 3) {
+  const parts = path.split(".");
+  const groups: string[] = [];
+  for (let i = 0; i < parts.length; i += groupSize) {
+    groups.push(parts.slice(i, i + groupSize).join("."));
+  }
+  return groups.flatMap((g, i) =>
+    i === groups.length - 1 ? [g] : [g, <wbr key={i} />]
+  );
 }
 
 // ---------- Busca recursiva ----------
@@ -46,14 +66,20 @@ function searchInJSON(
         results.push({ path: [...path, key].join("."), value: "(key match)" });
       }
 
-      if (options.searchValues && typeof value === "string" && value.toLowerCase().includes(term.toLowerCase())) {
+      if (
+        options.searchValues &&
+        typeof value === "string" &&
+        value.toLowerCase().includes(term.toLowerCase())
+      ) {
         results.push({ path: [...path, key].join("."), value });
       }
 
       results.push(...searchInJSON(value, term, options, [...path, key]));
     }
   } else if (Array.isArray(obj)) {
-    obj.forEach((item, i) => results.push(...searchInJSON(item, term, options, [...path, `[${i}]`])));
+    obj.forEach((item, i) =>
+      results.push(...searchInJSON(item, term, options, [...path, `[${i}]`]))
+    );
   }
 
   return results;
@@ -65,12 +91,19 @@ export default function Home() {
   const [modalIndex, setModalIndex] = useState<number | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState<{ path: string; value: string; specificEpithet?: string }[]>([]);
+  const [searchResults, setSearchResults] = useState<
+    { path: string; value: string; specificEpithet?: string }[]
+  >([]);
 
   const [maxResults, setMaxResults] = useState(20);
-  const [searchOptions, setSearchOptions] = useState({ searchKeys: true, searchValues: true });
+  const [searchOptions, setSearchOptions] = useState({
+    searchKeys: true,
+    searchValues: true,
+  });
 
-  const [allImages, setAllImages] = useState<{ path: string; url: string; legend?: string; specificEpithet?: string }[]>([]);
+  const [allImages, setAllImages] = useState<
+    { path: string; url: string; legend?: string; specificEpithet?: string }[]
+  >([]);
 
   // ---------- Carrega dados ----------
   useEffect(() => {
@@ -79,6 +112,7 @@ export default function Home() {
       .then((data) => {
         setPlants(data);
 
+        // Extrai todas as imagens globais
         const all = data.flatMap((plant: any) =>
           extractImagesWithPaths(plant).map((img) => ({
             ...img,
@@ -96,24 +130,18 @@ export default function Home() {
       return;
     }
 
-    const results: { path: string; value: string; specificEpithet?: string }[] = [];
+    const results: { path: string; value: string; specificEpithet?: string }[] =
+      [];
     for (const plant of plants) {
       const hits = searchInJSON(plant, searchTerm, searchOptions);
-      hits.forEach((h) => results.push({ ...h, specificEpithet: plant.specificEpithet }));
+      hits.forEach((h) =>
+        results.push({ ...h, specificEpithet: plant.specificEpithet })
+      );
     }
     setSearchResults(results.slice(0, maxResults));
   }, [searchTerm, plants, maxResults, searchOptions]);
 
-  // ---------- Array de imagens consistente ----------
-  const images = useMemo(() => {
-    if (selected) {
-      return extractImagesWithPaths(selected).map((img) => ({
-        ...img,
-        specificEpithet: selected.specificEpithet,
-      }));
-    }
-    return allImages;
-  }, [selected, allImages]);
+  const images: any = selected ? extractImagesWithPaths(selected) : allImages;
 
   return (
     <div className="w-full h-screen bg-background text-foreground flex flex-col">
@@ -166,16 +194,20 @@ export default function Home() {
 
           <Popover>
             <PopoverTrigger asChild>
-              <button className="p-2 rounded-md hover:bg-muted transition" title="Search settings">
+              <button
+                className="p-2 rounded-md hover:bg-muted transition"
+                title="Search settings"
+              >
                 <Settings className="w-5 h-5 text-muted-foreground" />
               </button>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-64">
               <div className="flex flex-col gap-3">
                 <h4 className="font-medium text-sm mb-1">Search settings</h4>
-
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs text-muted-foreground">Result limit:</label>
+                  <label className="text-xs text-muted-foreground">
+                    Result limit:
+                  </label>
                   <select
                     aria-label="Limite de resultados"
                     value={maxResults}
@@ -190,28 +222,6 @@ export default function Home() {
                     <option value={1000}>Max</option>
                   </select>
                 </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs text-muted-foreground">Search in:</label>
-                  <div className="flex flex-col gap-1 text-sm">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={searchOptions.searchKeys}
-                        onChange={(e) => setSearchOptions({ ...searchOptions, searchKeys: e.target.checked })}
-                      />
-                      Keys
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={searchOptions.searchValues}
-                        onChange={(e) => setSearchOptions({ ...searchOptions, searchValues: e.target.checked })}
-                      />
-                      Values
-                    </label>
-                  </div>
-                </div>
               </div>
             </PopoverContent>
           </Popover>
@@ -224,7 +234,9 @@ export default function Home() {
               <button
                 key={i}
                 onClick={() => {
-                  const match = plants.find((p) => p.specificEpithet === r.specificEpithet);
+                  const match = plants.find(
+                    (p) => p.specificEpithet === r.specificEpithet
+                  );
                   setSelected(match || null);
                   setSearchTerm("");
                   setSearchResults([]);
@@ -232,8 +244,12 @@ export default function Home() {
                 className="w-full text-left px-2 py-1 hover:bg-muted border-b border-border last:border-none flex justify-between items-center"
               >
                 <div>
-                  <p className="text-sm font-mono break-words text-primary">{r.path}</p>
-                  <p className="text-xs text-muted-foreground truncate">{r.value}</p>
+                  <p className="text-sm font-mono break-words text-primary">
+                    {r.path}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {r.value}
+                  </p>
                 </div>
                 <span className="text-xs font-semibold text-right text-foreground ml-2">
                   {"Mimosa " + r.specificEpithet}
@@ -257,7 +273,9 @@ export default function Home() {
                 <button
                   key={i}
                   className={`w-full text-left px-2 py-1 rounded hover:bg-muted ${
-                    selected?.specificEpithet === p.specificEpithet ? "bg-muted" : ""
+                    selected?.specificEpithet === p.specificEpithet
+                      ? "bg-muted"
+                      : ""
                   }`}
                   onClick={() => setSelected(p)}
                 >
@@ -285,7 +303,9 @@ export default function Home() {
             </Card>
           ) : (
             <>
-              <p className="text-muted-foreground text-center">Select a taxon on left</p>
+              <p className="text-muted-foreground text-center">
+                Select a taxon on left
+              </p>
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <Image
                   src="/TTS-Mimosa-App/tts.png"
@@ -297,7 +317,7 @@ export default function Home() {
           )}
         </main>
 
-        {/* Painel direito + modal */}
+        {/* Painel direito */}
         <ScrollArea className="border-l border-border p-3 h-full overflow-auto dark-scrollbar">
           <Card className="bg-card text-card-foreground w-full max-w-full box-border">
             <CardHeader>
@@ -305,14 +325,19 @@ export default function Home() {
             </CardHeader>
             <CardContent className="space-y-4">
               {images.length > 0 ? (
-                images.map((img, idx) => (
+                images.map((img: any, idx: any) => (
                   <div key={idx} className="space-y-1">
                     {!selected && img.specificEpithet && (
                       <p className="text-xs text-primary text-center">
                         <i>Mimosa {img.specificEpithet}</i>
                       </p>
                     )}
-                    <p className="text-sm text-muted-foreground break-words font-mono">{img.path}</p>
+                    <p
+                      className="text-sm text-muted-foreground font-mono whitespace-normal break-words"
+                      title={img.path}
+                    >
+                      {renderPathGrouped(img.path, 3)}
+                    </p>
                     <div
                       className="bg-muted rounded overflow-hidden cursor-pointer flex justify-center"
                       onClick={() => setModalIndex(idx)}
@@ -326,7 +351,9 @@ export default function Home() {
                       />
                     </div>
                     {img.legend && (
-                      <p className="text-xs text-muted-foreground italic text-center">{img.legend}</p>
+                      <p className="text-xs text-muted-foreground italic text-center">
+                        {img.legend}
+                      </p>
                     )}
                   </div>
                 ))
@@ -336,56 +363,6 @@ export default function Home() {
             </CardContent>
           </Card>
         </ScrollArea>
-
-        {modalIndex !== null && images[modalIndex] && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            onClick={() => setModalIndex(null)}
-          >
-            <div className="absolute inset-0 bg-black/30 backdrop-blur-md" />
-            <div className="relative w-full max-w-screen-lg flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
-              <button
-                onClick={() => setModalIndex(null)}
-                className="absolute top-2 right-2 text-white bg-gray-800/70 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-700 transition"
-              >
-                ✕
-              </button>
-              <button
-                onClick={() =>
-                  setModalIndex((prev) => (prev !== null ? (prev - 1 + images.length) % images.length : 0))
-                }
-                className="absolute left-2 top-1/2 -translate-y-1/2 text-white bg-gray-800/70 rounded-full w-10 h-10 flex items-center justify-center hover:bg-gray-700 transition"
-              >
-                ◀
-              </button>
-              <button
-                onClick={() =>
-                  setModalIndex((prev) => (prev !== null ? (prev + 1) % images.length : 0))
-                }
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-white bg-gray-800/70 rounded-full w-10 h-10 flex items-center justify-center hover:bg-gray-700 transition"
-              >
-                ▶
-              </button>
-
-              <Image
-                src={images[modalIndex].url}
-                alt={images[modalIndex].legend || "Imagem expandida"}
-                width={1920}
-                height={1080}
-                style={{ width: "100%", height: "auto" }}
-                className="rounded"
-              />
-              {images[modalIndex].legend && (
-                <p className="text-gray-300 text-sm text-center mt-2">{images[modalIndex].legend}</p>
-              )}
-              {!selected && images[modalIndex].specificEpithet && (
-                <p className="text-gray-300 text-sm text-center mt-1 italic">
-                  Mimosa {images[modalIndex].specificEpithet}
-                </p>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
