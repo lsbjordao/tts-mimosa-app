@@ -363,7 +363,7 @@ export default function Home() {
                         <i>Mimosa {img.specificEpithet}</i>
                       </p>
                     )}
-                    <p className="text-sm text-muted-foreground break-words font-mono">
+                    <p className="text-sm text-muted-foreground break-all font-mono truncate">
                       {img.path}
                     </p>
                     <div
