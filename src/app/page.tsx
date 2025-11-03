@@ -38,6 +38,18 @@ function extractImagesWithPaths(obj: any, path: string[] = []) {
   return results;
 }
 
+// ---------- Função auxiliar: insere <wbr/> a cada 3 pontos ----------
+function renderPathGrouped(path: string, groupSize = 3) {
+  const parts = path.split(".");
+  const groups: string[] = [];
+  for (let i = 0; i < parts.length; i += groupSize) {
+    groups.push(parts.slice(i, i + groupSize).join("."));
+  }
+  return groups.flatMap((g, i) =>
+    i === groups.length - 1 ? [g] : [g, <wbr key={i} />]
+  );
+}
+
 // ---------- Busca recursiva ----------
 function searchInJSON(
   obj: any,
@@ -118,7 +130,8 @@ export default function Home() {
       return;
     }
 
-    const results: { path: string; value: string; specificEpithet?: string }[] = [];
+    const results: { path: string; value: string; specificEpithet?: string }[] =
+      [];
     for (const plant of plants) {
       const hits = searchInJSON(plant, searchTerm, searchOptions);
       hits.forEach((h) =>
@@ -151,15 +164,6 @@ export default function Home() {
           >
             <FileText className="w-5 h-5 text-muted-foreground hover:text-primary transition" />
           </a>
-          {/* <a
-            href="https://doi.org/10.1093/biomethods/bpae017"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center"
-            title="How to cite"
-          >
-            <Quote className="w-5 h-5 text-muted-foreground hover:text-primary transition" />
-          </a> */}
           <a
             href="https://github.com/lsbjordao/TTS-Mimosa"
             target="_blank"
@@ -200,7 +204,6 @@ export default function Home() {
             <PopoverContent align="end" className="w-64">
               <div className="flex flex-col gap-3">
                 <h4 className="font-medium text-sm mb-1">Search settings</h4>
-
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-muted-foreground">
                     Result limit:
@@ -218,40 +221,6 @@ export default function Home() {
                     <option value={500}>500</option>
                     <option value={1000}>Max</option>
                   </select>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs text-muted-foreground">
-                    Search in:
-                  </label>
-                  <div className="flex flex-col gap-1 text-sm">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={searchOptions.searchKeys}
-                        onChange={(e) =>
-                          setSearchOptions({
-                            ...searchOptions,
-                            searchKeys: e.target.checked,
-                          })
-                        }
-                      />
-                      Keys
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={searchOptions.searchValues}
-                        onChange={(e) =>
-                          setSearchOptions({
-                            ...searchOptions,
-                            searchValues: e.target.checked,
-                          })
-                        }
-                      />
-                      Values
-                    </label>
-                  </div>
                 </div>
               </div>
             </PopoverContent>
@@ -363,8 +332,11 @@ export default function Home() {
                         <i>Mimosa {img.specificEpithet}</i>
                       </p>
                     )}
-                    <p className="text-sm text-muted-foreground font-mono break-words whitespace-normal max-w-full overflow-hidden">
-                      {img.path}
+                    <p
+                      className="text-sm text-muted-foreground font-mono whitespace-normal break-words"
+                      title={img.path}
+                    >
+                      {renderPathGrouped(img.path, 3)}
                     </p>
                     <div
                       className="bg-muted rounded overflow-hidden cursor-pointer flex justify-center"
@@ -392,67 +364,6 @@ export default function Home() {
           </Card>
         </ScrollArea>
       </div>
-
-      {/* Modal */}
-      {modalIndex !== null && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          onClick={() => setModalIndex(null)}
-        >
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-md" />
-
-          <div
-            className="relative w-full max-w-screen-lg flex flex-col items-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setModalIndex(null)}
-              className="absolute top-2 right-2 text-white bg-gray-800/70 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-700 transition"
-            >
-              ✕
-            </button>
-
-            <button
-              onClick={() =>
-                setModalIndex(
-                  (prev) => (prev! - 1 + images.length) % images.length
-                )
-              }
-              className="absolute left-2 top-1/2 -translate-y-1/2 text-white bg-gray-800/70 rounded-full w-10 h-10 flex items-center justify-center hover:bg-gray-700 transition"
-            >
-              ◀
-            </button>
-            <button
-              onClick={() =>
-                setModalIndex((prev) => (prev! + 1) % images.length)
-              }
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-white bg-gray-800/70 rounded-full w-10 h-10 flex items-center justify-center hover:bg-gray-700 transition"
-            >
-              ▶
-            </button>
-
-            <Image
-              src={images[modalIndex].url}
-              alt={images[modalIndex].legend || "Imagem expandida"}
-              width={1920}
-              height={1080}
-              style={{ width: "100%", height: "auto" }}
-              className="rounded"
-            />
-
-            {images[modalIndex].legend && (
-              <p className="text-gray-300 text-sm text-center mt-2">
-                {images[modalIndex].legend}
-              </p>
-            )}
-            {!selected && images[modalIndex].specificEpithet && (
-              <p className="text-gray-300 text-sm text-center mt-1 italic">
-                Mimosa {images[modalIndex].specificEpithet}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
