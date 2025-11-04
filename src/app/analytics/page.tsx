@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import Header from "./header";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -22,6 +22,8 @@ export default function Analytics() {
   const [pathsStats, setPathsStats] = useState<
     { path: string; hasKey: number; hasValue: number; missing: number }[]
   >([]);
+  const [visibleCount, setVisibleCount] = useState(30); // 👈 inicializa 30 itens
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     fetch("/TTS-Mimosa-App/data/MimosaDB.json")
@@ -31,6 +33,23 @@ export default function Analytics() {
         setPathsStats(analyzePaths(data));
       });
   }, []);
+
+  // 👁️ observer para carregar mais ao rolar
+  useEffect(() => {
+    if (!loadMoreRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) => Math.min(prev + 30, pathsStats.length));
+        }
+      },
+      { rootMargin: "100px" }
+    );
+
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [pathsStats]);
 
   const totalTaxa = plants.length;
   const totalPaths = pathsStats.length;
@@ -44,7 +63,6 @@ export default function Analytics() {
     return (totalRatio / pathsStats.length) * 100;
   }, [pathsStats, totalTaxa]);
 
-  /** 🔍 Extrai todos os caminhos JSON */
   function extractPaths(obj: any, prefix = "", paths: Set<string>) {
     if (Array.isArray(obj)) {
       obj.forEach((v) => extractPaths(v, `${prefix}[]`, paths));
@@ -57,7 +75,6 @@ export default function Analytics() {
     }
   }
 
-  /** ⚙️ Calcula presença/ausência de valores em cada caminho JSON */
   function analyzePaths(data: any[]) {
     const paths = new Set<string>();
     data.forEach((item) => extractPaths(item, "", paths));
@@ -93,7 +110,6 @@ export default function Analytics() {
     return stats.sort((a, b) => b.hasValue - a.hasValue);
   }
 
-  /** ⚙️ Busca valor por caminho tipo "a.b.c" */
   function getByPath(obj: any, path: string) {
     return path
       .replace(/\[\]/g, "")
@@ -152,7 +168,7 @@ export default function Analytics() {
               value="fields"
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
             >
-              {pathsStats.map((p, i) => (
+              {pathsStats.slice(0, visibleCount).map((p, i) => (
                 <Card key={i}>
                   <CardHeader>
                     <CardTitle className="text-base font-medium">{p.path}</CardTitle>
@@ -184,6 +200,9 @@ export default function Analytics() {
                   </CardContent>
                 </Card>
               ))}
+              <div ref={loadMoreRef} className="col-span-full h-10 flex justify-center items-center text-muted-foreground">
+                {visibleCount < pathsStats.length ? "Carregando mais..." : "Todos os campos carregados ✅"}
+              </div>
             </TabsContent>
 
             {/* 📊 Overview em 4 colunas */}
@@ -191,7 +210,7 @@ export default function Analytics() {
               value="overview"
               className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
             >
-              {pathsStats.map((p, i) => {
+              {pathsStats.slice(0, visibleCount).map((p, i) => {
                 const percent = (p.hasValue / totalTaxa) * 100;
                 return (
                   <Card key={i}>
@@ -211,6 +230,9 @@ export default function Analytics() {
                   </Card>
                 );
               })}
+              <div ref={loadMoreRef} className="col-span-full h-10 flex justify-center items-center text-muted-foreground">
+                {visibleCount < pathsStats.length ? "Carregando mais..." : "Todos os campos carregados ✅"}
+              </div>
             </TabsContent>
           </Tabs>
         </div>
