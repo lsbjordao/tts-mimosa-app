@@ -117,8 +117,8 @@ export default function Analytics() {
         values:
           Object.keys(valueCounts).length > 0
             ? Object.fromEntries(
-                Object.entries(valueCounts).sort((a, b) => b[1] - a[1])
-              )
+              Object.entries(valueCounts).sort((a, b) => b[1] - a[1])
+            )
             : undefined,
       });
     }
@@ -266,7 +266,7 @@ export default function Analytics() {
                               ))}
                             </Pie>
                             <Tooltip />
-                            <Legend wrapperStyle={{ marginTop: 20 }} />
+                            <Legend verticalAlign="bottom" align="center" height={50} />
                           </PieChart>
                         </ResponsiveContainer>
                       </CardContent>
