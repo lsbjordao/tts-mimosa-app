@@ -111,8 +111,8 @@ export default function Analytics() {
         values:
           Object.keys(valueCounts).length > 0
             ? Object.fromEntries(
-                Object.entries(valueCounts).sort((a, b) => b[1] - a[1])
-              )
+              Object.entries(valueCounts).sort((a, b) => b[1] - a[1])
+            )
             : undefined,
       });
     }
@@ -130,10 +130,10 @@ export default function Analytics() {
   const averageCompleteness =
     plants.length && pathsStats.length
       ? (
-          (pathsStats.reduce((acc, p) => acc + p.hasValue / plants.length, 0) /
-            pathsStats.length) *
-          100
-        ).toFixed(1) + "%"
+        (pathsStats.reduce((acc, p) => acc + p.hasValue / plants.length, 0) /
+          pathsStats.length) *
+        100
+      ).toFixed(1) + "%"
       : "0%";
 
   // Ajuste da grid para que o card de Average Completeness some quando a aba não for "completeness"
@@ -149,7 +149,8 @@ export default function Analytics() {
       </div>
 
       {/* Big Number Cards */}
-      <div className={`grid ${gridColsClass} gap-4 text-center mt-4`}>
+      <div className="grid grid-cols-3 gap-4 text-center mt-4 px-4"> {/* px-4 para margem lateral */}
+        {/* Total of taxa */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-3xl font-bold text-primary">{plants.length}</CardTitle>
@@ -157,6 +158,7 @@ export default function Analytics() {
           </CardHeader>
         </Card>
 
+        {/* Detected JSON paths */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-3xl font-bold text-primary">{pathsStats.length}</CardTitle>
@@ -164,13 +166,16 @@ export default function Analytics() {
           </CardHeader>
         </Card>
 
-        {activeTab === "completeness" && (
+        {/* Average Completeness / placeholder */}
+        {activeTab === "completeness" ? (
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-3xl font-bold text-primary">{averageCompleteness}</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">Average Completeness</p>
             </CardHeader>
           </Card>
+        ) : (
+          <div /> // Placeholder vazio para manter a coluna
         )}
       </div>
 
