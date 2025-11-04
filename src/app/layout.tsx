@@ -1,3 +1,5 @@
+// ./src/app/layout.tsx
+
 import "./globals.css";
 import { Inter } from "next/font/google";
 import Script from "next/script";
@@ -33,9 +35,7 @@ export default function RootLayout({
           `}
         </Script>
       </head>
-      <body
-        className={`${inter.className} flex h-screen overflow-hidden bg-black text-white`}
-      >
+      <body className={`${inter.className} min-h-screen bg-black text-white overflow-y-auto`}>
         {children}
       </body>
     </html>

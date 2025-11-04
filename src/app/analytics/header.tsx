@@ -14,7 +14,6 @@ export default function Header() {
         <Link
           href="/"
           className="cursor-pointer transition duration-300 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
-          title="Voltar ao app"
         >
           <b>TTS-Mimosa</b>
         </Link>
