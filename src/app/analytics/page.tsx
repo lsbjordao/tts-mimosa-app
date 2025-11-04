@@ -1,5 +1,3 @@
-// ./src/app/analytics/page.tsx
-
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -22,7 +20,7 @@ const COLORS = ["#22d3ee", "#10b981", "#f59e0b", "#ef4444", "#6366f1"];
 export default function Analytics() {
   const [plants, setPlants] = useState<any[]>([]);
   const [pathsStats, setPathsStats] = useState<
-    { path: string; has: number; missing: number }[]
+    { path: string; hasKey: number; hasValue: number; missing: number }[]
   >([]);
 
   useEffect(() => {
@@ -40,16 +38,16 @@ export default function Analytics() {
   const avgCompleteness = useMemo(() => {
     if (!pathsStats.length) return 0;
     const totalRatio = pathsStats.reduce(
-      (acc, p) => acc + p.has / totalTaxa,
+      (acc, p) => acc + p.hasValue / totalTaxa,
       0
     );
     return (totalRatio / pathsStats.length) * 100;
   }, [pathsStats, totalTaxa]);
 
-  /** 🔍 Percorre recursivamente objetos e arrays */
+  /** 🔍 Extrai todos os caminhos JSON */
   function extractPaths(obj: any, prefix = "", paths: Set<string>) {
     if (Array.isArray(obj)) {
-      obj.forEach((v, i) => extractPaths(v, `${prefix}[]`, paths));
+      obj.forEach((v) => extractPaths(v, `${prefix}[]`, paths));
     } else if (obj && typeof obj === "object") {
       for (const [key, value] of Object.entries(obj)) {
         const newPath = prefix ? `${prefix}.${key}` : key;
@@ -64,27 +62,35 @@ export default function Analytics() {
     const paths = new Set<string>();
     data.forEach((item) => extractPaths(item, "", paths));
 
-    const stats: { path: string; has: number; missing: number }[] = [];
+    const stats: { path: string; hasKey: number; hasValue: number; missing: number }[] = [];
 
     for (const path of paths) {
-      let has = 0;
+      let hasKey = 0;
+      let hasValue = 0;
+
       for (const obj of data) {
-        const value = getByPath(obj, path);
+        const val = getByPath(obj, path);
+        if (val !== undefined) hasKey++;
         if (
-          value !== undefined &&
-          value !== null &&
-          JSON.stringify(value) !== "{}" &&
-          JSON.stringify(value) !== "[]" &&
-          value !== ""
+          val !== undefined &&
+          val !== null &&
+          JSON.stringify(val) !== "{}" &&
+          JSON.stringify(val) !== "[]" &&
+          val !== ""
         ) {
-          has++;
+          hasValue++;
         }
       }
-      stats.push({ path, has, missing: data.length - has });
+
+      stats.push({
+        path,
+        hasKey,
+        hasValue,
+        missing: data.length - hasKey,
+      });
     }
 
-    // ordena por taxa de preenchimento decrescente
-    return stats.sort((a, b) => b.has - a.has);
+    return stats.sort((a, b) => b.hasValue - a.hasValue);
   }
 
   /** ⚙️ Busca valor por caminho tipo "a.b.c" */
@@ -92,7 +98,11 @@ export default function Analytics() {
     return path
       .replace(/\[\]/g, "")
       .split(".")
-      .reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
+      .reduce(
+        (acc, key) =>
+          acc && acc[key] !== undefined ? acc[key] : undefined,
+        obj
+      );
   }
 
   const topFilled = useMemo(() => pathsStats.slice(0, 15), [pathsStats]);
@@ -132,7 +142,6 @@ export default function Analytics() {
           </Card>
         </div>
 
-        {/* Espaço maior entre resumo e tabs */}
         <div className="mt-6">
           <Tabs defaultValue="fields" className="w-full">
             <TabsList className="mb-6">
@@ -140,8 +149,11 @@ export default function Analytics() {
               <TabsTrigger value="overview">Overview</TabsTrigger>
             </TabsList>
 
-            {/* 🍰 Campos em 3 colunas */}
-            <TabsContent value="fields" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* 🍰 Campos (3 colunas) */}
+            <TabsContent
+              value="fields"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
               {topFilled.map((p, i) => (
                 <Card key={i}>
                   <CardHeader>
@@ -152,7 +164,8 @@ export default function Analytics() {
                       <PieChart>
                         <Pie
                           data={[
-                            { name: "Has value", value: p.has },
+                            { name: "Has key", value: p.hasKey },
+                            { name: "Has value", value: p.hasValue },
                             { name: "Missing", value: p.missing },
                           ]}
                           dataKey="value"
@@ -162,7 +175,8 @@ export default function Analytics() {
                           outerRadius={80}
                           label
                         >
-                          <Cell fill={COLORS[2]} />
+                          <Cell fill={COLORS[0]} />
+                          <Cell fill={COLORS[1]} />
                           <Cell fill={COLORS[4]} />
                         </Pie>
                         <Tooltip />
@@ -174,10 +188,13 @@ export default function Analytics() {
               ))}
             </TabsContent>
 
-            {/* 📊 Overview com barras */}
-            <TabsContent value="overview" className="space-y-4">
-              {pathsStats.slice(0, 50).map((p, i) => {
-                const percent = (p.has / totalTaxa) * 100;
+            {/* 📊 Overview em 4 colunas */}
+            <TabsContent
+              value="overview"
+              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+            >
+              {pathsStats.slice(0, 40).map((p, i) => {
+                const percent = (p.hasValue / totalTaxa) * 100;
                 return (
                   <Card key={i}>
                     <CardHeader>
