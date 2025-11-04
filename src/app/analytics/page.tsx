@@ -105,8 +105,6 @@ export default function Analytics() {
       );
   }
 
-  const topFilled = useMemo(() => pathsStats.slice(0, 15), [pathsStats]);
-
   return (
     <div className="w-full h-screen flex flex-col bg-background text-foreground">
       <Header />
@@ -154,7 +152,7 @@ export default function Analytics() {
               value="fields"
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
             >
-              {topFilled.map((p, i) => (
+              {pathsStats.map((p, i) => (
                 <Card key={i}>
                   <CardHeader>
                     <CardTitle className="text-base font-medium">{p.path}</CardTitle>
@@ -193,7 +191,7 @@ export default function Analytics() {
               value="overview"
               className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
             >
-              {pathsStats.slice(0, 40).map((p, i) => {
+              {pathsStats.map((p, i) => {
                 const percent = (p.hasValue / totalTaxa) * 100;
                 return (
                   <Card key={i}>
