@@ -1,5 +1,3 @@
-// ./src/app/analytics/page.tsx
-
 "use client";
 
 import { useEffect, useState, useMemo, useRef } from "react";
@@ -20,9 +18,6 @@ import {
   TabsTrigger,
   TabsContent,
 } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 
 const COLORS = ["#60A5FA", "#A1A1AA", "#34D399", "#FBBF24", "#F87171", "#A78BFA"];
 
@@ -33,9 +28,7 @@ export default function Analytics() {
   >([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [visibleCount, setVisibleCount] = useState(30);
-  const [activeTab, setActiveTab] = useState<"completeness" | "values">("completeness");
-  const [searchInKeys, setSearchInKeys] = useState(true);
-  const [searchInValues, setSearchInValues] = useState(false);
+  const [activeTab, setActiveTab] = useState("completeness");
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -61,25 +54,13 @@ export default function Analytics() {
     return () => observer.disconnect();
   }, [pathsStats]);
 
-  const totalTaxa = plants.length;
-  const totalPaths = pathsStats.length;
-
-  /** 🔍 Filtragem pelo termo buscado */
   const filteredPaths = useMemo(() => {
     if (!searchTerm.trim()) return pathsStats;
+    return pathsStats.filter((p) =>
+      p.path.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [pathsStats, searchTerm]);
 
-    return pathsStats.filter((p) => {
-      const term = searchTerm.toLowerCase();
-      const inKey = searchInKeys && p.path.toLowerCase().includes(term);
-      const inValue =
-        searchInValues &&
-        p.values &&
-        Object.keys(p.values).some((v) => v.toLowerCase().includes(term));
-      return inKey || inValue;
-    });
-  }, [pathsStats, searchTerm, searchInKeys, searchInValues]);
-
-  /** 🔬 Extração de todos os paths do JSON */
   function extractPaths(obj: any, prefix = "", paths: Set<string>) {
     if (Array.isArray(obj)) {
       obj.forEach((v) => extractPaths(v, `${prefix}[]`, paths));
@@ -92,7 +73,6 @@ export default function Analytics() {
     }
   }
 
-  /** 📊 Analisa completude e valores de cada campo */
   function analyzePaths(data: any[]) {
     const paths = new Set<string>();
     data.forEach((item) => extractPaths(item, "", paths));
@@ -136,7 +116,9 @@ export default function Analytics() {
         hasValue,
         values:
           Object.keys(valueCounts).length > 0
-            ? Object.fromEntries(Object.entries(valueCounts).sort((a, b) => b[1] - a[1]))
+            ? Object.fromEntries(
+                Object.entries(valueCounts).sort((a, b) => b[1] - a[1])
+              )
             : undefined,
       });
     }
@@ -160,65 +142,41 @@ export default function Analytics() {
         <div className="grid grid-cols-3 gap-4 text-center">
           <Card>
             <CardHeader>
-              <CardTitle className="text-3xl font-bold text-primary">{plants.length}</CardTitle>
+              <CardTitle className="text-3xl font-bold text-primary">
+                {plants.length}
+              </CardTitle>
               <p className="text-sm text-muted-foreground">Total of taxa</p>
             </CardHeader>
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle className="text-3xl font-bold text-primary">{totalPaths}</CardTitle>
+              <CardTitle className="text-3xl font-bold text-primary">
+                {pathsStats.length}
+              </CardTitle>
               <p className="text-sm text-muted-foreground">Detected JSON paths</p>
             </CardHeader>
           </Card>
         </div>
 
-        {/* 🔄 Tabs */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-            <TabsList className="bg-muted/40 backdrop-blur-sm p-1 rounded-xl shadow-sm">
-              <TabsTrigger
-                value="completeness"
-                className="px-4 py-2 text-sm font-medium rounded-lg transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm hover:bg-muted"
-              >
-                Field completeness
-              </TabsTrigger>
-              <TabsTrigger
-                value="values"
-                className="px-4 py-2 text-sm font-medium rounded-lg transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm hover:bg-muted"
-              >
-                Field values
-              </TabsTrigger>
-            </TabsList>
-
-            {/* 🔍 Search controls */}
-            <div className="flex items-center gap-3">
-              <Input
-                placeholder="Search term..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-48 h-8 text-sm"
-              />
-              <div className="flex items-center gap-2">
-                <Label htmlFor="keys" className="text-sm">Keys</Label>
-                <Checkbox
-                  id="keys"
-                  checked={searchInKeys}
-                  onCheckedChange={(c) => setSearchInKeys(Boolean(c))}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="values" className="text-sm">Values</Label>
-                <Checkbox
-                  id="values"
-                  checked={searchInValues}
-                  onCheckedChange={(c) => setSearchInValues(Boolean(c))}
-                />
-              </div>
-            </div>
-          </div>
+        {/* 🧭 Tabs com ShadCN */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-10">
+          <TabsList className="bg-muted/50 rounded-xl p-1 w-fit mb-8">
+            <TabsTrigger
+              value="completeness"
+              className="data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm"
+            >
+              Field completeness
+            </TabsTrigger>
+            <TabsTrigger
+              value="values"
+              className="data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm"
+            >
+              Field values
+            </TabsTrigger>
+          </TabsList>
 
           {/* 🍰 1️⃣ Field completeness */}
-          <TabsContent value="completeness" className="space-y-4">
+          <TabsContent value="completeness">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredPaths.slice(0, visibleCount).map((p, i) => {
                 const hasData = p.hasValue;
@@ -226,7 +184,9 @@ export default function Analytics() {
                 return (
                   <Card key={i}>
                     <CardHeader>
-                      <CardTitle className="text-base font-medium truncate">{p.path}</CardTitle>
+                      <CardTitle className="text-base font-medium truncate">
+                        {p.path}
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="h-[240px] flex justify-center items-center">
                       <ResponsiveContainer width="100%" height="100%">
@@ -247,7 +207,7 @@ export default function Analytics() {
                             <Cell fill={COLORS[1]} />
                           </Pie>
                           <Tooltip />
-                          <Legend />
+                          <Legend wrapperStyle={{ marginTop: 16 }} />
                         </PieChart>
                       </ResponsiveContainer>
                     </CardContent>
@@ -260,13 +220,15 @@ export default function Analytics() {
               ref={loadMoreRef}
               className="col-span-full h-12 flex justify-center items-center text-muted-foreground"
             >
-              {visibleCount < filteredPaths.length ? "Carregando mais..." : "Todos os campos carregados ✅"}
+              {visibleCount < filteredPaths.length
+                ? "Carregando mais..."
+                : "Todos os campos carregados ✅"}
             </div>
           </TabsContent>
 
           {/* 🍰 2️⃣ Field values */}
-          <TabsContent value="values" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <TabsContent value="values">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredPaths
                 .filter(
                   (p) =>
@@ -283,7 +245,9 @@ export default function Analytics() {
                   return (
                     <Card key={i}>
                       <CardHeader>
-                        <CardTitle className="text-base font-medium truncate">{p.path}</CardTitle>
+                        <CardTitle className="text-base font-medium truncate">
+                          {p.path}
+                        </CardTitle>
                       </CardHeader>
                       <CardContent className="h-[240px] flex justify-center items-center">
                         <ResponsiveContainer width="100%" height="100%">
@@ -302,7 +266,7 @@ export default function Analytics() {
                               ))}
                             </Pie>
                             <Tooltip />
-                            <Legend />
+                            <Legend wrapperStyle={{ marginTop: 16 }} />
                           </PieChart>
                         </ResponsiveContainer>
                       </CardContent>
