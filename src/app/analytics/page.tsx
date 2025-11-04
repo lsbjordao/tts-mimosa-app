@@ -1,8 +1,9 @@
 // ./src/app/analytics/page.tsx
+
 "use client";
 
-import { useState, useEffect } from "react";
-import { BarChart3 } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import Header from "./header";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -20,80 +21,65 @@ import {
   Legend,
 } from "recharts";
 
-// Cores padrão do ShadCN (você pode trocar por tokens do tema)
 const COLORS = ["#6366f1", "#22d3ee", "#10b981", "#f59e0b", "#ef4444"];
 
 export default function Analytics() {
-  const [data, setData] = useState<any[]>([]);
+  const [plants, setPlants] = useState<any[]>([]);
 
-  // Simulação de dados JSON que poderiam vir de um fetch()
   useEffect(() => {
-    setData([
-      { category: "API", count: 32 },
-      { category: "Frontend", count: 21 },
-      { category: "Database", count: 17 },
-      { category: "Infra", count: 11 },
-      { category: "Docs", count: 8 },
-    ]);
+    fetch("/TTS-Mimosa-App/data/MimosaDB.json")
+      .then((res) => res.json())
+      .then((data) => setPlants(data));
   }, []);
 
+  // sumarização: número de campos por espécie
+  const summary = useMemo(() => {
+    if (!plants.length) return [];
+    return plants.map((p) => ({
+      name: p.specificEpithet || "sp.",
+      keys: Object.keys(p).length,
+    }));
+  }, [plants]);
+
+  // sumarização: contagem de chaves mais frequentes no dataset
+  const keyFreq = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const p of plants) {
+      Object.keys(p).forEach((k) => (counts[k] = (counts[k] || 0) + 1));
+    }
+    return Object.entries(counts)
+      .map(([key, count]) => ({ key, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+  }, [plants]);
+
   return (
-    <div className="w-full flex flex-col gap-4">
-      {/* Header */}
-      <header className="flex items-center justify-between border-b border-border/40 pb-2">
-        <div className="flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-primary" />
-          <h1 className="text-lg font-semibold tracking-tight">Analytics</h1>
-        </div>
+    <div className="w-full h-screen bg-background text-foreground flex flex-col">
+      <Header />
 
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <a
-            href="/docs"
-            className="hover:text-primary transition-colors"
-            title="Documentação"
-          >
-            Docs
-          </a>
-          <a
-            href="/analytics"
-            className="hover:text-primary transition-colors flex items-center gap-1"
-            title="Relatórios analíticos"
-          >
-            <BarChart3 className="w-4 h-4" />
-            Analytics
-          </a>
-          <button
-            title="Buscar"
-            className="hover:text-primary transition-colors"
-          >
-            🔍
-          </button>
-        </div>
-      </header>
-
-      {/* Conteúdo */}
-      <ScrollArea className="h-[calc(100vh-6rem)]">
-        <Tabs defaultValue="bar" className="w-full">
+      <ScrollArea className="flex-1 p-4">
+        <Tabs defaultValue="structure" className="w-full">
           <TabsList className="mb-4">
-            <TabsTrigger value="bar">Barras</TabsTrigger>
-            <TabsTrigger value="pie">Pizza</TabsTrigger>
+            <TabsTrigger value="structure">Campos por Táxon</TabsTrigger>
+            <TabsTrigger value="keys">Chaves Frequentes</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="bar">
+          {/* Gráfico de barras - nº de chaves por táxon */}
+          <TabsContent value="structure">
             <Card>
               <CardHeader>
-                <CardTitle>Distribuição por Categoria</CardTitle>
+                <CardTitle>Número de campos por espécie</CardTitle>
               </CardHeader>
               <CardContent className="h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data}>
+                  <BarChart data={summary}>
                     <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
-                    <XAxis dataKey="category" />
+                    <XAxis dataKey="name" />
                     <YAxis />
                     <Tooltip />
-                    <Bar dataKey="count" radius={[6, 6, 0, 0]}>
-                      {data.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Bar dataKey="keys" radius={[6, 6, 0, 0]}>
+                      {summary.map((_, index) => (
+                        <Cell key={index} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -102,25 +88,26 @@ export default function Analytics() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="pie">
+          {/* Gráfico de pizza - chaves mais comuns */}
+          <TabsContent value="keys">
             <Card>
               <CardHeader>
-                <CardTitle>Composição por Categoria</CardTitle>
+                <CardTitle>Chaves mais frequentes no JSON</CardTitle>
               </CardHeader>
               <CardContent className="h-[400px] flex justify-center items-center">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={data}
+                      data={keyFreq}
                       dataKey="count"
-                      nameKey="category"
+                      nameKey="key"
                       cx="50%"
                       cy="50%"
                       outerRadius={120}
                       label
                     >
-                      {data.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      {keyFreq.map((_, i) => (
+                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip />
