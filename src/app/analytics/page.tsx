@@ -159,7 +159,7 @@ export default function Analytics() {
         </div>
 
         {/* 🧭 Tabs com ShadCN */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-10">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
           <TabsList className="bg-muted/50 rounded-xl p-1 w-fit mb-8">
             <TabsTrigger
               value="completeness"
@@ -266,7 +266,7 @@ export default function Analytics() {
                               ))}
                             </Pie>
                             <Tooltip />
-                            <Legend wrapperStyle={{ marginTop: 16 }} />
+                            <Legend wrapperStyle={{ marginTop: 20 }} />
                           </PieChart>
                         </ResponsiveContainer>
                       </CardContent>
