@@ -135,8 +135,9 @@ export default function Analytics() {
 
   return (
     <div className="w-full h-screen flex flex-col bg-background text-foreground">
-      <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
-
+      <div className="sticky top-0 z-10 bg-background">
+        <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+      </div>
       <ScrollArea className="flex-1 p-6 space-y-8">
         {/* 💡 Resumo geral */}
         <div className="grid grid-cols-3 gap-4 text-center">
