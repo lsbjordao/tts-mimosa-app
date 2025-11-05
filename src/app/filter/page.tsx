@@ -110,24 +110,9 @@ export default function FilterPage() {
         if (f.mode === "property_value") {
           return getByPath(p, f.path) === f.value;
         } else if (f.mode === "property") {
-          // Filtra por propriedade - busca em qualquer campo que contenha a string
-          const searchTerm = f.path.toLowerCase();
-          
-          // Busca recursiva em todas as propriedades string do objeto
-          const searchInObject = (obj: any): boolean => {
-            if (typeof obj === "string") {
-              return obj.toLowerCase().includes(searchTerm);
-            }
-            if (Array.isArray(obj)) {
-              return obj.some(item => searchInObject(item));
-            }
-            if (obj && typeof obj === "object") {
-              return Object.values(obj).some(value => searchInObject(value));
-            }
-            return false;
-          };
-          
-          return searchInObject(p);
+          // No modo property, busca apenas se o path existe no objeto
+          // e filtra plantas que possuem esse campo
+          return getByPath(p, f.path) !== undefined;
         }
         return true;
       })
@@ -164,12 +149,6 @@ export default function FilterPage() {
 
   const handlePropertySearch = (index: number, searchValue: string) => {
     setPropertySearch(searchValue);
-    // Aplica o filtro automaticamente enquanto digita no modo property
-    if (filters[index].mode === "property") {
-      const newFilters = [...filters];
-      newFilters[index].path = searchValue;
-      setFilters(newFilters);
-    }
   };
 
   const filteredStringPaths = stringPaths.filter((sp) =>
@@ -249,11 +228,11 @@ export default function FilterPage() {
                   {/* Campo de filtragem dependendo do modo */}
                   {f.mode === "property" ? (
                     <div className="flex flex-col gap-2">
-                      <p className="text-xs text-muted-foreground">Search in all properties</p>
+                      <p className="text-xs text-muted-foreground">Search property paths</p>
                       <div className="border rounded-md">
                         <Command>
                           <CommandInput 
-                            placeholder="Type to search in all properties..." 
+                            placeholder="Type to search property paths..." 
                             value={propertySearch}
                             onValueChange={(value) => handlePropertySearch(i, value)}
                           />
@@ -264,6 +243,10 @@ export default function FilterPage() {
                                 <CommandItem
                                   key={sp.path}
                                   className="text-xs py-1"
+                                  onSelect={() => {
+                                    updateFilter(i, "path", sp.path);
+                                    setPropertySearch("");
+                                  }}
                                 >
                                   {sp.path}
                                 </CommandItem>
@@ -272,9 +255,11 @@ export default function FilterPage() {
                           </CommandList>
                         </Command>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Showing fields matching: "{f.path || propertySearch}"
-                      </p>
+                      {f.path && (
+                        <p className="text-xs text-muted-foreground">
+                          Filtering by property: <span className="font-medium">"{f.path}"</span>
+                        </p>
+                      )}
                     </div>
                   ) : (
                     <div className="flex flex-col gap-2">
