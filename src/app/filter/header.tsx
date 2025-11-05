@@ -61,7 +61,7 @@ export default function Header() {
           className="flex items-center"
           title="Filter"
         >
-          <Funnel className="w-5 h-5 text-muted-foreground hover:text-primary transition" />
+          <Funnel className="w-5 h-5 text-muted-foreground" />
         </Link>
         
         <div className="ml-auto flex items-center gap-2">
