@@ -20,13 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X, Plus, ChevronDown } from "lucide-react";
+import { X, Plus, ChevronDown, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 
 interface Filter {
   mode: "property" | "property_value";
   path: string;
   value: string;
+  enabled: boolean;
 }
 
 export default function FilterPage() {
@@ -106,12 +107,18 @@ export default function FilterPage() {
       return;
     }
 
+    const activeFilters = filters.filter(f => f.enabled);
+    
+    if (activeFilters.length === 0) {
+      setFilteredPlants(plants);
+      return;
+    }
+
     const filtered = plants.filter((p) =>
-      filters.every((f) => {
+      activeFilters.every((f) => {
         if (f.mode === "property_value") {
           return getByPath(p, f.path) === f.value;
         } else if (f.mode === "property") {
-          // No modo property, busca se o path existe no objeto (busca exata)
           return getByPath(p, f.path) !== undefined;
         }
         return true;
@@ -121,12 +128,18 @@ export default function FilterPage() {
   }, [filters, plants]);
 
   const addFilter = () => {
-    setFilters([...filters, { mode: "property", path: "", value: "" }]);
+    setFilters([...filters, { mode: "property", path: "", value: "", enabled: true }]);
     setPropertySearch("");
   };
 
   const removeFilter = (index: number) => {
     setFilters(filters.filter((_, i) => i !== index));
+  };
+
+  const toggleFilter = (index: number) => {
+    const newFilters = [...filters];
+    newFilters[index].enabled = !newFilters[index].enabled;
+    setFilters(newFilters);
   };
 
   const updateFilter = (
@@ -192,36 +205,56 @@ export default function FilterPage() {
               return (
                 <div
                   key={i}
-                  className="border border-border p-3 rounded-lg bg-card space-y-2"
+                  className={`border border-border p-3 rounded-lg space-y-2 ${
+                    f.enabled ? "bg-card" : "bg-muted/30 opacity-70"
+                  }`}
                 >
-                  {/* Tipo */}
+                  {/* Cabeçalho com controles */}
                   <div className="flex items-center justify-between gap-2">
-                    <Select
-                      value={f.mode}
-                      onValueChange={(v) =>
-                        updateFilter(
-                          i,
-                          "mode",
-                          v as "property" | "property_value"
-                        )
-                      }
-                    >
-                      <SelectTrigger className="w-[180px] text-sm">
-                        <SelectValue placeholder="Select type..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="property">Property</SelectItem>
-                        <SelectItem value="property_value">
-                          Property + Value
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center gap-2">
+                      {/* Botão para ativar/desativar filtro */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => toggleFilter(i)}
+                        title={f.enabled ? "Disable filter" : "Enable filter"}
+                        className="h-8 w-8"
+                      >
+                        {f.enabled ? (
+                          <Eye className="w-4 h-4" />
+                        ) : (
+                          <EyeOff className="w-4 h-4" />
+                        )}
+                      </Button>
+
+                      <Select
+                        value={f.mode}
+                        onValueChange={(v) =>
+                          updateFilter(
+                            i,
+                            "mode",
+                            v as "property" | "property_value"
+                          )
+                        }
+                      >
+                        <SelectTrigger className="w-[180px] text-sm">
+                          <SelectValue placeholder="Select type..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="property">Property</SelectItem>
+                          <SelectItem value="property_value">
+                            Property and Value
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => removeFilter(i)}
                       title="Remove filter"
+                      className="h-8 w-8"
                     >
                       <X className="w-4 h-4" />
                     </Button>
@@ -230,7 +263,7 @@ export default function FilterPage() {
                   {/* Campo de filtragem dependendo do modo */}
                   {f.mode === "property" ? (
                     <div className="flex flex-col gap-2">
-                      <p className="text-xs text-muted-foreground">Search property paths</p>
+                      <p className="text-xs text-muted-foreground">Search property path</p>
                       <div className="border rounded-md">
                         <Command>
                           <CommandInput 
@@ -264,7 +297,7 @@ export default function FilterPage() {
                     <div className="flex flex-col gap-2">
                       <p className="text-xs text-muted-foreground">Search property and value</p>
 
-                      {/* Selector de campo - CORRIGIDO */}
+                      {/* Selector de campo */}
                       <Select
                         open={openPropertySelect === i}
                         onOpenChange={(open) => setOpenPropertySelect(open ? i : null)}
@@ -334,6 +367,13 @@ export default function FilterPage() {
                       )}
                     </div>
                   )}
+
+                  {/* Indicador de status do filtro */}
+                  {!f.enabled && (
+                    <p className="text-xs text-muted-foreground italic">
+                      Filter disabled
+                    </p>
+                  )}
                 </div>
               );
             })}
@@ -348,8 +388,10 @@ export default function FilterPage() {
           </Button>
 
           <p className="text-sm text-muted-foreground mt-4">
-            {filters.length
-              ? `Showing ${filteredPlants.length} taxa matching filters.`
+            {filters.some(f => f.enabled)
+              ? `Showing ${filteredPlants.length} taxa matching active filters.`
+              : filters.length
+              ? "All filters are disabled. Showing all taxa."
               : "Add filters to narrow down taxa."}
           </p>
         </main>
