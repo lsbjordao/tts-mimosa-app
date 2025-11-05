@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X, Plus } from "lucide-react";
+import { X, Plus, ChevronDown } from "lucide-react";
 import Image from "next/image";
 
 interface Filter {
@@ -37,6 +37,7 @@ export default function FilterPage() {
   const [filters, setFilters] = useState<Filter[]>([]);
   const [filteredPlants, setFilteredPlants] = useState<any[]>([]);
   const [propertySearch, setPropertySearch] = useState<string>("");
+  const [openPropertySelect, setOpenPropertySelect] = useState<number | null>(null);
 
   function getByPath(obj: any, path: string) {
     return path
@@ -110,15 +111,19 @@ export default function FilterPage() {
         if (f.mode === "property_value") {
           return getByPath(p, f.path) === f.value;
         } else if (f.mode === "property") {
-          // No modo property, busca apenas se o path existe no objeto
-          // e filtra plantas que possuem esse campo
-          return getByPath(p, f.path) !== undefined;
+          // No modo property, busca se o path existe (busca parcial)
+          const searchPath = f.path.toLowerCase();
+          // Verifica se algum path do objeto contém o texto buscado
+          const hasMatchingPath = stringPaths.some(sp => 
+            sp.path.toLowerCase().includes(searchPath)
+          );
+          return hasMatchingPath;
         }
         return true;
       })
     );
     setFilteredPlants(filtered);
-  }, [filters, plants]);
+  }, [filters, plants, stringPaths]);
 
   const addFilter = () => {
     setFilters([...filters, { mode: "property", path: "", value: "" }]);
@@ -147,8 +152,11 @@ export default function FilterPage() {
     setFilters(newFilters);
   };
 
-  const handlePropertySearch = (index: number, searchValue: string) => {
-    setPropertySearch(searchValue);
+  const handlePropertyInputChange = (index: number, value: string) => {
+    setPropertySearch(value);
+    const newFilters = [...filters];
+    newFilters[index].path = value;
+    setFilters(newFilters);
   };
 
   const filteredStringPaths = stringPaths.filter((sp) =>
@@ -232,9 +240,9 @@ export default function FilterPage() {
                       <div className="border rounded-md">
                         <Command>
                           <CommandInput 
-                            placeholder="Type to search property paths..." 
-                            value={propertySearch}
-                            onValueChange={(value) => handlePropertySearch(i, value)}
+                            placeholder="Type property path (e.g., trichomes.filiform)..." 
+                            value={f.path}
+                            onValueChange={(value) => handlePropertyInputChange(i, value)}
                           />
                           <CommandList className="max-h-[120px]">
                             <CommandEmpty>No matching fields.</CommandEmpty>
@@ -243,10 +251,7 @@ export default function FilterPage() {
                                 <CommandItem
                                   key={sp.path}
                                   className="text-xs py-1"
-                                  onSelect={() => {
-                                    updateFilter(i, "path", sp.path);
-                                    setPropertySearch("");
-                                  }}
+                                  onSelect={() => handlePropertyInputChange(i, sp.path)}
                                 >
                                   {sp.path}
                                 </CommandItem>
@@ -257,7 +262,7 @@ export default function FilterPage() {
                       </div>
                       {f.path && (
                         <p className="text-xs text-muted-foreground">
-                          Filtering by property: <span className="font-medium">"{f.path}"</span>
+                          Filtering by property path: <span className="font-medium">"{f.path}"</span>
                         </p>
                       )}
                     </div>
@@ -265,33 +270,47 @@ export default function FilterPage() {
                     <div className="flex flex-col gap-2">
                       <p className="text-xs text-muted-foreground">Search property and value</p>
 
-                      {/* seletor de campo */}
-                      <div className="border rounded-md">
-                        <Command>
-                          <CommandInput 
-                            placeholder="Search field name..." 
-                            className="h-9"
-                          />
-                          <CommandList className="max-h-[120px]">
-                            <CommandEmpty>No matching fields.</CommandEmpty>
-                            <CommandGroup>
-                              {stringPaths.map((sp) => (
-                                <CommandItem
-                                  key={sp.path}
-                                  onSelect={() =>
-                                    updateFilter(i, "path", sp.path)
-                                  }
-                                  className="text-xs py-1"
-                                >
-                                  {sp.path}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </div>
+                      {/* Selector de campo */}
+                      <Select
+                        open={openPropertySelect === i}
+                        onOpenChange={(open) => setOpenPropertySelect(open ? i : null)}
+                        value={f.path}
+                        onValueChange={(value) => updateFilter(i, "path", value)}
+                      >
+                        <SelectTrigger className="w-full text-sm">
+                          <SelectValue placeholder="Select property..." />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[200px] overflow-auto">
+                          <div className="p-1">
+                            <Command>
+                              <CommandInput 
+                                placeholder="Search property..." 
+                                className="h-9"
+                              />
+                              <CommandList className="max-h-[160px]">
+                                <CommandEmpty>No matching fields.</CommandEmpty>
+                                <CommandGroup>
+                                  {stringPaths.map((sp) => (
+                                    <CommandItem
+                                      key={sp.path}
+                                      value={sp.path}
+                                      onSelect={() => {
+                                        updateFilter(i, "path", sp.path);
+                                        setOpenPropertySelect(null);
+                                      }}
+                                      className="text-xs py-1"
+                                    >
+                                      {sp.path}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </div>
+                        </SelectContent>
+                      </Select>
 
-                      {/* seletor de valores */}
+                      {/* Selector de valores */}
                       {f.path && (
                         <Select
                           onValueChange={(value) =>
