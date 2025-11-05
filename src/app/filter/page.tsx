@@ -111,19 +111,14 @@ export default function FilterPage() {
         if (f.mode === "property_value") {
           return getByPath(p, f.path) === f.value;
         } else if (f.mode === "property") {
-          // No modo property, busca se o path existe (busca parcial)
-          const searchPath = f.path.toLowerCase();
-          // Verifica se algum path do objeto contém o texto buscado
-          const hasMatchingPath = stringPaths.some(sp => 
-            sp.path.toLowerCase().includes(searchPath)
-          );
-          return hasMatchingPath;
+          // No modo property, busca se o path existe no objeto (busca exata)
+          return getByPath(p, f.path) !== undefined;
         }
         return true;
       })
     );
     setFilteredPlants(filtered);
-  }, [filters, plants, stringPaths]);
+  }, [filters, plants]);
 
   const addFilter = () => {
     setFilters([...filters, { mode: "property", path: "", value: "" }]);
@@ -153,7 +148,6 @@ export default function FilterPage() {
   };
 
   const handlePropertyInputChange = (index: number, value: string) => {
-    setPropertySearch(value);
     const newFilters = [...filters];
     newFilters[index].path = value;
     setFilters(newFilters);
@@ -270,7 +264,7 @@ export default function FilterPage() {
                     <div className="flex flex-col gap-2">
                       <p className="text-xs text-muted-foreground">Search property and value</p>
 
-                      {/* Selector de campo */}
+                      {/* Selector de campo - CORRIGIDO */}
                       <Select
                         open={openPropertySelect === i}
                         onOpenChange={(open) => setOpenPropertySelect(open ? i : null)}
@@ -278,7 +272,9 @@ export default function FilterPage() {
                         onValueChange={(value) => updateFilter(i, "path", value)}
                       >
                         <SelectTrigger className="w-full text-sm">
-                          <SelectValue placeholder="Select property..." />
+                          <SelectValue>
+                            {f.path || "Select property..."}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent className="max-h-[200px] overflow-auto">
                           <div className="p-1">
@@ -286,17 +282,23 @@ export default function FilterPage() {
                               <CommandInput 
                                 placeholder="Search property..." 
                                 className="h-9"
+                                onValueChange={(value) => setPropertySearch(value)}
                               />
                               <CommandList className="max-h-[160px]">
                                 <CommandEmpty>No matching fields.</CommandEmpty>
                                 <CommandGroup>
-                                  {stringPaths.map((sp) => (
+                                  {stringPaths
+                                    .filter((sp) =>
+                                      sp.path.toLowerCase().includes(propertySearch.toLowerCase())
+                                    )
+                                    .map((sp) => (
                                     <CommandItem
                                       key={sp.path}
                                       value={sp.path}
                                       onSelect={() => {
                                         updateFilter(i, "path", sp.path);
                                         setOpenPropertySelect(null);
+                                        setPropertySearch("");
                                       }}
                                       className="text-xs py-1"
                                     >
