@@ -1,5 +1,3 @@
-// ./src/app/filter/page.tsx
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -22,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X, Plus, ChevronDown, Eye, EyeOff } from "lucide-react";
+import { X, Plus, ChevronDown, Eye, EyeOff, Search } from "lucide-react";
 import Image from "next/image";
 
 interface Filter {
@@ -41,6 +39,7 @@ export default function FilterPage() {
   const [filteredPlants, setFilteredPlants] = useState<any[]>([]);
   const [propertySearch, setPropertySearch] = useState<string>("");
   const [openPropertySelect, setOpenPropertySelect] = useState<number | null>(null);
+  const [openPropertySearch, setOpenPropertySearch] = useState<number | null>(null);
 
   function getByPath(obj: any, path: string) {
     return path
@@ -55,9 +54,7 @@ export default function FilterPage() {
     const paths: Record<string, Set<string>> = {};
     
     function traverse(obj: any, currentPath: string = "", depth: number = 0) {
-      // Limitar profundidade para evitar recursão infinita
-      if (depth > 10) return;
-      
+      if (depth > 6) return;
       if (obj === null || obj === undefined) return;
 
       if (typeof obj === 'object') {
@@ -65,6 +62,7 @@ export default function FilterPage() {
           const newPath = currentPath ? `${currentPath}.${key}` : key;
           
           if (value !== null && value !== undefined) {
+            // Só adiciona valores primitivos reais
             if (typeof value === 'string' && value.trim() !== '') {
               if (!paths[newPath]) paths[newPath] = new Set();
               paths[newPath].add(value);
@@ -72,17 +70,18 @@ export default function FilterPage() {
               if (!paths[newPath]) paths[newPath] = new Set();
               paths[newPath].add(value.toString());
             } else if (Array.isArray(value)) {
-              // Para arrays, adiciona o caminho e processa alguns itens (não todos)
-              if (!paths[newPath]) paths[newPath] = new Set();
-              paths[newPath].add(`[array:${value.length}]`);
-              
-              // Processa apenas os primeiros 5 itens para evitar explosão de memória
-              value.slice(0, 5).forEach((item, index) => {
-                traverse(item, `${newPath}[${index}]`, depth + 1);
+              // Para arrays, processa apenas valores primitivos dos itens
+              value.slice(0, 5).forEach((item) => {
+                if (typeof item === 'string' && item.trim() !== '') {
+                  if (!paths[newPath]) paths[newPath] = new Set();
+                  paths[newPath].add(item);
+                } else if (typeof item === 'number' || typeof item === 'boolean') {
+                  if (!paths[newPath]) paths[newPath] = new Set();
+                  paths[newPath].add(item.toString());
+                }
               });
             } else if (typeof value === 'object') {
-              if (!paths[newPath]) paths[newPath] = new Set();
-              paths[newPath].add('[object]');
+              // Continua recursão para objetos
               traverse(value, newPath, depth + 1);
             }
           }
@@ -90,19 +89,30 @@ export default function FilterPage() {
       }
     }
 
-    // Processa apenas os primeiros 10 itens para evitar sobrecarga
-    const sampleData = data.slice(0, 10);
+    // Processa uma amostra dos dados
+    const sampleData = data.slice(0, 8);
     sampleData.forEach((item) => {
       traverse(item);
     });
 
-    // Converte para array e filtra caminhos muito longos
+    // Filtra e limpa os resultados
     return Object.entries(paths)
       .map(([path, set]) => ({
         path,
-        options: Array.from(set).sort().slice(0, 100), // Limita opções por caminho
+        options: Array.from(set)
+          .filter(opt => 
+            opt && 
+            typeof opt === 'string' && 
+            opt.trim() !== '' &&
+            !opt.startsWith('[') && 
+            !opt.includes('array') && 
+            opt !== '[object]' &&
+            opt !== 'object'
+          )
+          .sort()
+          .slice(0, 100),
       }))
-      .filter(item => item.path.length < 100) // Filtra caminhos muito longos
+      .filter(item => item.options.length > 0)
       .sort((a, b) => a.path.localeCompare(b.path));
   }
 
@@ -204,6 +214,8 @@ export default function FilterPage() {
     const newFilters = [...filters];
     newFilters[index].path = value;
     setFilters(newFilters);
+    // Fecha o dropdown após seleção
+    setOpenPropertySearch(null);
   };
 
   const filteredStringPaths = stringPaths.filter((sp) =>
@@ -304,29 +316,54 @@ export default function FilterPage() {
                   {f.mode === "property" ? (
                     <div className="flex flex-col gap-2">
                       <p className="text-xs text-muted-foreground">Search property path</p>
-                      <div className="border rounded-md">
-                        <Command>
-                          <CommandInput 
-                            placeholder="Type property path (e.g., trichomes.filiform)..." 
-                            value={f.path}
-                            onValueChange={(value) => handlePropertyInputChange(i, value)}
-                          />
-                          <CommandList className="max-h-[200px] overflow-auto">
-                            <CommandEmpty>No matching fields.</CommandEmpty>
-                            <CommandGroup>
-                              {filteredStringPaths.map((sp) => (
-                                <CommandItem
-                                  key={sp.path}
-                                  className="text-xs py-1"
-                                  onSelect={() => handlePropertyInputChange(i, sp.path)}
-                                >
-                                  {sp.path}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </div>
+                      
+                      {/* Selector com busca para Property */}
+                      <Select
+                        open={openPropertySearch === i}
+                        onOpenChange={(open) => setOpenPropertySearch(open ? i : null)}
+                        value={f.path}
+                        onValueChange={(value) => handlePropertyInputChange(i, value)}
+                      >
+                        <SelectTrigger className="w-full text-sm">
+                          <div className="flex items-center gap-2">
+                            <Search className="w-4 h-4 text-muted-foreground" />
+                            <SelectValue placeholder="Search property path..." />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[300px] overflow-auto">
+                          <div className="p-1">
+                            <Command>
+                              <CommandInput 
+                                placeholder="Search property..." 
+                                className="h-9"
+                                onValueChange={(value) => setPropertySearch(value)}
+                              />
+                              <CommandList className="max-h-[240px]">
+                                <CommandEmpty>No matching fields.</CommandEmpty>
+                                <CommandGroup>
+                                  {stringPaths
+                                    .filter((sp) =>
+                                      sp.path.toLowerCase().includes(propertySearch.toLowerCase())
+                                    )
+                                    .map((sp) => (
+                                    <CommandItem
+                                      key={sp.path}
+                                      value={sp.path}
+                                      onSelect={() => {
+                                        handlePropertyInputChange(i, sp.path);
+                                      }}
+                                      className="text-xs py-1"
+                                    >
+                                      {sp.path}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </div>
+                        </SelectContent>
+                      </Select>
+
                       {f.path && (
                         <p className="text-xs text-muted-foreground">
                           Filtering by property path: <span className="font-medium">"{f.path}"</span>
@@ -337,7 +374,7 @@ export default function FilterPage() {
                     <div className="flex flex-col gap-2">
                       <p className="text-xs text-muted-foreground">Search property and value</p>
 
-                      {/* Selector de campo */}
+                      {/* Selector de campo para Property and Value */}
                       <Select
                         open={openPropertySelect === i}
                         onOpenChange={(open) => setOpenPropertySelect(open ? i : null)}

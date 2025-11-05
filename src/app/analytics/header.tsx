@@ -79,7 +79,7 @@ export default function Header({
             placeholder="Search JSON paths..."
             className="w-56"
           />
-          <Popover>
+          {/* <Popover>
             <PopoverTrigger asChild>
               <button
                 className="p-2 rounded-md hover:bg-muted transition"
@@ -93,7 +93,7 @@ export default function Header({
                 Nenhuma configuração disponível ainda.
               </p>
             </PopoverContent>
-          </Popover>
+          </Popover> */}
         </div>
       </div>
     </header>

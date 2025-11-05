@@ -64,7 +64,7 @@ export default function Header() {
           <Funnel className="w-5 h-5 text-muted-foreground" />
         </Link>
         
-        <div className="ml-auto flex items-center gap-2">
+        {/* <div className="ml-auto flex items-center gap-2">
           <Popover>
             <PopoverTrigger asChild>
               <button
@@ -80,7 +80,7 @@ export default function Header() {
               </p>
             </PopoverContent>
           </Popover>
-        </div>
+        </div> */}
       </div>
     </header>
   );
