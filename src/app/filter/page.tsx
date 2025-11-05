@@ -1,3 +1,5 @@
+// ./src/app/filter/page.tsx
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -46,6 +48,12 @@ export default function FilterPage() {
   const [propertySearch, setPropertySearch] = useState<string>("");
   const [openPropertySelect, setOpenPropertySelect] = useState<number | null>(null);
   const [openPropertySearch, setOpenPropertySearch] = useState<number | null>(null);
+
+  // Estado para controle do modal de imagem
+  const [modalIndex, setModalIndex] = useState<number | null>(null);
+  const [allImages, setAllImages] = useState<
+    { path: string; url: string; legend?: string; specificEpithet?: string }[]
+  >([]);
 
   function getByPath(obj: any, path: string) {
     return path
@@ -168,6 +176,7 @@ export default function FilterPage() {
     };
   }
 
+  // ---------- Função auxiliar: extrai imagens (igual da página principal) ----------
   function extractImagesWithPaths(obj: any, path: string[] = []) {
     let results: { path: string; url: string; legend?: string }[] = [];
     if (Array.isArray(obj)) {
@@ -186,6 +195,18 @@ export default function FilterPage() {
     return results;
   }
 
+  // ---------- Função auxiliar: insere <wbr/> a cada 3 pontos ----------
+  function renderPathGrouped(path: string, groupSize = 3) {
+    const parts = path.split(".");
+    const groups: string[] = [];
+    for (let i = 0; i < parts.length; i += groupSize) {
+      groups.push(parts.slice(i, i + groupSize).join("."));
+    }
+    return groups.flatMap((g, i) =>
+      i === groups.length - 1 ? [g] : [g, <wbr key={i} />]
+    );
+  }
+
   useEffect(() => {
     fetch("/TTS-Mimosa-App/data/MimosaDB.json")
       .then((res) => res.json())
@@ -196,6 +217,15 @@ export default function FilterPage() {
         console.log("Total paths for Property mode:", extractedPaths.allPaths.length);
         console.log("Total paths for Property+Value mode:", extractedPaths.valuePaths.length);
         setFilteredPlants(data);
+
+        // Extrai todas as imagens globais (igual na página principal)
+        const all = data.flatMap((plant: any) =>
+          extractImagesWithPaths(plant).map((img) => ({
+            ...img,
+            specificEpithet: plant.specificEpithet,
+          }))
+        );
+        setAllImages(all);
       })
       .catch((error) => {
         console.error("Error loading data:", error);
@@ -281,6 +311,27 @@ export default function FilterPage() {
     setFilters(newFilters);
     setOpenPropertySearch(null);
   };
+
+  // ---------- Controle do modal (igual da página principal) ----------
+  const closeModal = () => setModalIndex(null);
+  const showPrev = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setModalIndex((prev) => (prev! > 0 ? prev! - 1 : allImages.length - 1));
+  };
+  const showNext = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setModalIndex((prev) => (prev! < allImages.length - 1 ? prev! + 1 : 0));
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeModal();
+      if (e.key === "ArrowLeft") showPrev();
+      if (e.key === "ArrowRight") showNext();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [allImages.length]);
 
   // Filtros para cada modo
   const filteredAllPaths = pathData.allPaths.filter((path) =>
@@ -537,34 +588,53 @@ export default function FilterPage() {
           </p>
         </main>
 
-        {/* Painel direito com imagens */}
+        {/* Painel direito com imagens - CORRIGIDO */}
         <ScrollArea className="border-l border-border flex-1 overflow-auto p-4 dark-scrollbar">
           <Card className="bg-card text-card-foreground">
             <CardHeader>
               <CardTitle>Images</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-4">
               {filteredPlants.length === 0 ? (
                 <p className="text-muted-foreground text-sm">No matches.</p>
               ) : (
                 filteredPlants.flatMap((p, idx) => {
                   const imgs = extractImagesWithPaths(p);
                   return imgs.length > 0 ? (
-                    <div key={idx}>
-                      <p className="text-sm text-primary italic text-center mb-1">
+                    <div key={idx} className="space-y-3">
+                      <p className="text-sm text-primary italic text-center">
                         Mimosa {p.specificEpithet}
                       </p>
                       {imgs.map((img, j) => (
-                        <div key={j} className="mb-2">
-                          <Image
-                            src={img.url}
-                            alt={img.legend || ""}
-                            width={260}
-                            height={180}
-                            className="rounded-md border border-border"
-                          />
+                        <div key={j} className="space-y-1">
+                          <p
+                            className="text-xs text-muted-foreground font-mono whitespace-normal break-words"
+                            title={img.path}
+                          >
+                            {renderPathGrouped(img.path, 3)}
+                          </p>
+                          <div
+                            className="bg-muted rounded overflow-hidden cursor-pointer flex justify-center"
+                            onClick={() => {
+                              // Encontrar o índice global desta imagem
+                              const globalIndex = allImages.findIndex(
+                                globalImg => 
+                                  globalImg.url === img.url && 
+                                  globalImg.specificEpithet === p.specificEpithet
+                              );
+                              setModalIndex(globalIndex !== -1 ? globalIndex : 0);
+                            }}
+                          >
+                            <Image
+                              src={img.url}
+                              alt={img.legend || `Image of Mimosa ${p.specificEpithet}`}
+                              width={260}
+                              height={180}
+                              className="rounded-md border border-border object-contain hover:opacity-90 transition-opacity"
+                            />
+                          </div>
                           {img.legend && (
-                            <p className="text-xs text-muted-foreground italic text-center mt-1">
+                            <p className="text-xs text-muted-foreground italic text-center">
                               {img.legend}
                             </p>
                           )}
@@ -578,6 +648,55 @@ export default function FilterPage() {
           </Card>
         </ScrollArea>
       </div>
+
+      {/* 🖼️ Modal de imagem (igual da página principal) */}
+      {modalIndex !== null && allImages[modalIndex] && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center"
+          onClick={closeModal}
+        >
+          <button
+            onClick={closeModal}
+            className="absolute top-4 right-6 text-white text-3xl font-light hover:text-primary transition"
+          >
+            ×
+          </button>
+
+          <button
+            onClick={showPrev}
+            className="absolute left-4 text-white text-5xl font-light hover:text-primary transition select-none"
+          >
+            ‹
+          </button>
+
+          <div className="max-w-[90vw] max-h-[80vh] flex flex-col items-center">
+            <Image
+              src={allImages[modalIndex].url}
+              alt={allImages[modalIndex].legend || `Image ${modalIndex + 1}`}
+              width={1200}
+              height={900}
+              className="object-contain max-h-[80vh]"
+            />
+            {allImages[modalIndex].legend && (
+              <p className="text-sm text-muted-foreground italic mt-2 text-center text-white">
+                {allImages[modalIndex].legend}
+              </p>
+            )}
+            {allImages[modalIndex].specificEpithet && (
+              <p className="text-sm text-white italic mt-1">
+                Mimosa {allImages[modalIndex].specificEpithet}
+              </p>
+            )}
+          </div>
+
+          <button
+            onClick={showNext}
+            className="absolute right-4 text-white text-5xl font-light hover:text-primary transition select-none"
+          >
+            ›
+          </button>
+        </div>
+      )}
     </div>
   );
 }
