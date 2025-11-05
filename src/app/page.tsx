@@ -12,7 +12,8 @@ import {
   Github,
   BookOpenText,
   FileText,
-  ChartPie
+  ChartPie,
+  Funnel
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -226,6 +227,15 @@ export default function Home() {
             title="Analytics"
           >
             <ChartPie className="w-5 h-5 text-muted-foreground hover:text-primary transition" />
+          </Link>
+
+          <Link
+            href="/filter"
+            rel="noopener noreferrer"
+            className="flex items-center"
+            title="Filter"
+          >
+            <Funnel className="w-5 h-5 text-muted-foreground hover:text-primary transition" />
           </Link>
 
           <Search className="w-5 h-5 text-muted-foreground" />
