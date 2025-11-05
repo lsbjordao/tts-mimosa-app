@@ -286,7 +286,7 @@ export default function Home() {
         // Log detalhado das primeiras imagens
         if (all.length > 0) {
           console.log("📸 Primeiras 3 imagens encontradas:");
-          all.slice(0, 3).forEach((img, i) => {
+          all.slice(0, 3).forEach((img: any, i: any) => {
             console.log(`   ${i + 1}. ${img.specificEpithet} - ${img.path} → ${img.url}`);
           });
         } else {
@@ -506,7 +506,7 @@ export default function Home() {
                 className="w-full text-left px-2 py-1 hover:bg-muted border-b border-border last:border-none flex justify-between items-center"
               >
                 <div>
-                  <p className="text-sm font-mono break-words text-primary">
+                  <p className="text-sm font-mono wrap-break-word text-primary">
                     {r.path}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
@@ -620,7 +620,7 @@ export default function Home() {
                       </p>
                     )}
                     <p
-                      className="text-xs text-muted-foreground font-mono whitespace-normal break-words bg-muted p-1 rounded"
+                      className="text-xs text-muted-foreground font-mono whitespace-normal wrap-break-word bg-muted p-1 rounded"
                       title={img.path}
                     >
                       {renderPathGrouped(img.path, 3)}
@@ -727,7 +727,7 @@ export default function Home() {
               }}
             />
             {images[modalIndex].legend && (
-              <p className="text-sm text-muted-foreground italic mt-2 text-center text-white">
+              <p className="text-sm text-muted-foreground italic mt-2 text-center">
                 {images[modalIndex].legend}
               </p>
             )}
