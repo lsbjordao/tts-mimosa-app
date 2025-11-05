@@ -7,6 +7,14 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from "@/components/ui/command";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -171,27 +179,32 @@ export default function FilterPage() {
           {/* Campos de filtros */}
           <div className="space-y-3">
             {filters.map((f, i) => {
-              const pathOptions = stringPaths.map((sp) => sp.path);
               const selectedPath = stringPaths.find((sp) => sp.path === f.path);
               const valueOptions = selectedPath?.options || [];
 
               return (
                 <div key={i} className="flex items-center gap-2">
-                  <Select
-                    onValueChange={(value) => updateFilter(i, "path", value)}
-                    value={f.path}
-                  >
-                    <SelectTrigger className="w-full flex-1">
-                      <SelectValue placeholder="Select field..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {pathOptions.map((p) => (
-                        <SelectItem key={p} value={p}>
-                          {p}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {/* Select com busca (Command) */}
+                  <div className="w-full flex-1 border rounded-md">
+                    <Command>
+                      <CommandInput placeholder="Search field..." />
+                      <CommandList>
+                        <CommandEmpty>No results found.</CommandEmpty>
+                        <CommandGroup>
+                          {stringPaths.map((sp) => (
+                            <CommandItem
+                              key={sp.path}
+                              onSelect={() => updateFilter(i, "path", sp.path)}
+                            >
+                              {sp.path}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </div>
+
+                  {/* Select normal de valores */}
                   <Select
                     onValueChange={(value) => updateFilter(i, "value", value)}
                     value={f.value}
@@ -208,6 +221,7 @@ export default function FilterPage() {
                       ))}
                     </SelectContent>
                   </Select>
+
                   <Button
                     variant="ghost"
                     size="icon"
